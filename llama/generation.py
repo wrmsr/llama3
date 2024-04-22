@@ -16,7 +16,7 @@ from fairscale.nn.model_parallel.initialize import (
     model_parallel_is_initialized,
 )
 
-from llama.model import ModelArgs, Transformer, DEVICE_KWARGS
+from llama.model import ModelArgs, Transformer, DEVICE_KWARGS, DIST_BACKEND
 from llama.tokenizer import ChatFormat, Dialog, Message, Tokenizer
 
 
@@ -65,7 +65,7 @@ class Llama:
             and loads the pre-trained model and tokenizer.
         """
         if not torch.distributed.is_initialized():
-            torch.distributed.init_process_group("gloo")
+            torch.distributed.init_process_group(DIST_BACKEND)
         if not model_parallel_is_initialized():
             if model_parallel_size is None:
                 model_parallel_size = int(os.environ.get("WORLD_SIZE", 1))
