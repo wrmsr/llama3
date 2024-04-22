@@ -2,6 +2,7 @@
 # This software may be used and distributed in accordance with the terms of the Llama 3 Community License Agreement.
 
 import math
+import os
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -14,6 +15,31 @@ from fairscale.nn.model_parallel.layers import (
     VocabParallelEmbedding,
 )
 from torch import nn
+
+
+DEVICE_KWARGS = {
+    # 'device': 'cuda',
+}
+
+to_device = (
+    lambda x: x
+    # lambda x: x.cuda()
+)
+
+os.environ.update({
+    k: os.environ.get(k, v)
+    for k, v in {
+        'RANK': '0',
+        'WORLD_SIZE': '1',
+        'MASTER_ADDR': 'localhost',
+        'MASTER_PORT': '12353',
+    }.items()
+})
+
+DIST_BACKEND = (
+    # 'nccl'
+    'gloo'
+)
 
 
 @dataclass
@@ -126,22 +152,22 @@ class Attention(nn.Module):
             init_method=lambda x: x,
         )
 
-        self.cache_k = torch.zeros(
+        self.cache_k = to_device(torch.zeros(
             (
                 args.max_batch_size,
                 args.max_seq_len,
                 self.n_local_kv_heads,
                 self.head_dim,
             )
-        ).cuda()
-        self.cache_v = torch.zeros(
+        ))
+        self.cache_v = to_device(torch.zeros(
             (
                 args.max_batch_size,
                 args.max_seq_len,
                 self.n_local_kv_heads,
                 self.head_dim,
             )
-        ).cuda()
+        ))
 
     def forward(
         self,
